@@ -1,0 +1,20 @@
+Debian bug 690524
+When sshd passwordauthenication is turned off (key access only)
+then DenyHost does not detect the denied log entry. This means
+we are not blocking the remote host when multiple attempts are
+made to access the local service. We should try to
+detect bad connections to key-only systems.
+
+In cases where DenyHosts cannot write to disk, it should not crash.
+
+Consider support for IPv6
+
+Set up new sync server.
+
+Add support for IPFW on FreeBSD.
+
+Add persistent IPTABLES rules.
+
+Filter out bad IP addresses. Do not allow host names or other invalid IP
+addresses.
+
