@@ -1,3 +1,19 @@
+"""
+DenyHosts 主控制器模块
+
+此模块是DenyHosts的核心，负责分析日志文件、检测SSH暴力破解尝试，
+并根据配置自动封禁可疑IP地址。它集成了日志解析、威胁检测、防火墙管理
+和报告功能。
+
+主要功能：
+- 解析系统日志文件（如/var/log/auth.log）
+- 跟踪登录失败尝试
+- 根据阈值自动封禁IP
+- 支持多种防火墙后端（iptables, pf等）
+- 生成报告和发送邮件通知
+- 支持分布式同步
+"""
+
 import logging
 import gzip
 import os
@@ -35,9 +51,36 @@ warning = logging.getLogger("denyhosts").warning
 
 
 class DenyHosts(object):
+    """
+    DenyHosts主控制器类
+
+    负责协调整个DenyHosts系统的运行，包括日志解析、威胁检测、
+    IP封禁、报告生成和同步等核心功能。
+
+    主要属性：
+    - __denied_hosts: 已封禁的主机字典
+    - __prefs: 配置参数对象
+    - __report: 报告生成器
+    - __allowed_hosts: 白名单管理器
+    - file_tracker: 日志文件跟踪器
+    """
+
     def __init__(self, logfile, prefs, lock_file,
                  ignore_offset=0, first_time=0,
                  noemail=0, daemon=0, foreground=0):
+        """
+        初始化DenyHosts实例
+
+        Args:
+            logfile: 要监控的日志文件路径
+            prefs: 配置参数字典
+            lock_file: 锁文件对象，防止多实例运行
+            ignore_offset: 是否忽略日志偏移量（从头开始解析）
+            first_time: 是否为首次运行
+            noemail: 是否禁用邮件通知
+            daemon: 是否以守护进程模式运行
+            foreground: 是否在前台运行（调试模式）
+        """
         self.__denied_hosts = {}
         self.__prefs = prefs
         self.__lock_file = lock_file
@@ -274,6 +317,13 @@ class DenyHosts(object):
                 self.sync_counter = 0
 
     def get_denied_hosts(self):
+        """
+        从hosts.deny文件中读取已封禁的主机列表
+
+        解析/etc/hosts.deny文件，将其中的IP地址或主机名添加到
+        __denied_hosts字典中。同时检查是否有白名单主机被意外封禁，
+        并生成警告报告。
+        """
         self.__denied_hosts = {}
         with open(self.__prefs.get('HOSTS_DENY'), 'r') as fhdh:
             line = fhdh.readline()
@@ -304,6 +354,18 @@ allowed based on your %s file""" % (self.__prefs.get("HOSTS_DENY"),
             self.__allowed_hosts.clear_warned_hosts()
 
     def update_hosts_deny(self, deny_hosts):
+        """
+        更新hosts.deny文件，添加新的封禁主机
+
+        将新检测到的恶意主机添加到/etc/hosts.deny文件中，
+        并根据配置同时更新防火墙规则（iptables或pf）。
+
+        Args:
+            deny_hosts: 要封禁的主机列表
+
+        Returns:
+            tuple: (新封禁的主机列表, 状态码)
+        """
         if not deny_hosts:
             return None, None
 
@@ -403,6 +465,19 @@ allowed based on your %s file""" % (self.__prefs.get("HOSTS_DENY"),
         return invalid
 
     def process_log(self, logfile, offset):
+        """
+        处理日志文件，分析登录尝试并检测威胁
+
+        从指定的偏移量开始读取日志文件，解析每一行日志，
+        识别失败的登录尝试，并根据阈值决定是否封禁IP。
+
+        Args:
+            logfile: 日志文件路径
+            offset: 开始处理的字节偏移量
+
+        Returns:
+            int: 处理后的新偏移量，失败时返回-1
+        """
         try:
             if logfile.endswith(".gz"):
                 fp = gzip.open(logfile)
@@ -572,6 +647,12 @@ allowed based on your %s file""" % (self.__prefs.get("HOSTS_DENY"),
             return re.compile(val)
 
     def init_regex(self):
+        """
+        初始化正则表达式模式
+
+        根据配置编译各种日志解析所需的正则表达式，
+        包括SSHD格式、成功登录、失败登录等模式。
+        """
         self.__sshd_format_regex = self.get_regex('SSHD_FORMAT_REGEX', SSHD_FORMAT_REGEX)
 
         self.__successful_entry_regex = self.get_regex('SUCCESSFUL_ENTRY_REGEX',

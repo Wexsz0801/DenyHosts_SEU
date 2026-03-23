@@ -1,3 +1,16 @@
+"""
+登录尝试跟踪模块
+
+此模块负责跟踪和分析SSH登录尝试，包括成功和失败的登录、
+可疑活动检测，以及根据不同阈值判断是否应该封禁IP地址。
+
+主要功能：
+- 跟踪不同类型的登录失败（有效用户、无效用户、root用户、受限用户）
+- 维护计数器和时间戳，用于判断攻击模式
+- 生成可疑登录报告
+- 根据配置的阈值决定封禁决策
+"""
+
 import os
 import logging
 import errno
@@ -11,8 +24,32 @@ info = logging.getLogger("loginattempt").info
 
 
 class LoginAttempt(object):
+    """
+    登录尝试跟踪器类
+
+    分析SSH登录日志，跟踪各种类型的登录尝试，
+    根据配置的阈值和时间窗口判断是否构成威胁。
+
+    主要属性：
+    - __valid_users: 有效用户名的失败登录计数
+    - __invalid_users: 无效用户名的失败登录计数
+    - __abusive_hosts_*: 不同类型的攻击主机统计
+    - __suspicious_logins: 可疑登录记录
+    """
+
     def __init__(self, prefs, allowed_hosts, suspicious_always=1,
                  first_time=0, fetch_all=1, restricted=None):
+        """
+        初始化登录尝试跟踪器
+
+        Args:
+            prefs: 配置参数字典
+            allowed_hosts: 白名单主机管理器
+            suspicious_always: 是否总是报告可疑登录
+            first_time: 是否为首次运行
+            fetch_all: 是否加载所有现有统计数据
+            restricted: 受限用户名集合
+        """
         if restricted is None:
             restricted = set()
         self.__restricted = restricted
@@ -50,6 +87,18 @@ class LoginAttempt(object):
         return self.__new_suspicious_logins
 
     def add(self, user, host, success, invalid):
+        """
+        添加登录尝试记录
+
+        根据用户名、主机、成功状态和有效性更新相应的计数器。
+        处理不同类型的登录失败，并更新时间戳。
+
+        Args:
+            user: 尝试登录的用户名
+            host: 来源IP地址或主机名
+            success: 是否登录成功（1=成功，0=失败）
+            invalid: 用户名是否有效（1=无效，0=有效）
+        """
         user_host_key = "%s - %s" % (user, host)
 
         if host:
