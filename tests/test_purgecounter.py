@@ -5,7 +5,7 @@ from tempfile import mkdtemp
 import unittest
 
 from DenyHosts.constants import PURGE_HISTORY
-from DenyHosts.counter import Counter
+from DenyHosts.counter import create_counters
 from DenyHosts.prefs import Prefs
 from DenyHosts.purgecounter import PurgeCounter
 

@@ -2,7 +2,7 @@ import logging
 import os
 
 from . import constants
-from .counter import Counter, CounterRecord
+from .counter import create_counters, CounterRecord
 
 error = logging.getLogger("purgecounter").error
 info = logging.getLogger("purgecounter").info
@@ -37,7 +37,7 @@ class PurgeCounter(object):
         return banned
 
     def get_data(self):
-        counter = Counter()
+        counter = create_counters()
         try:
             fp = open(self.filename, "r")
         except IOError:

@@ -3,7 +3,7 @@ import logging
 import errno
 from .util import is_true
 
-from .counter import Counter, CounterRecord
+from .counter import create_counters, CounterRecord
 from .constants import *
 
 debug = logging.getLogger("loginattempt").debug
@@ -44,7 +44,7 @@ class LoginAttempt(object):
             self.__abusive_hosts_invalid = self.get_abusive_hosts_invalid()
             self.__abusive_hosts_root = self.get_abusive_hosts_root()
             self.__abusive_hosts_restricted = self.get_abusive_hosts_restricted()
-            self.__new_suspicious_logins = Counter()
+            self.__new_suspicious_logins = create_counters()
 
     def get_new_suspicious_logins(self):
         return self.__new_suspicious_logins
@@ -148,7 +148,7 @@ class LoginAttempt(object):
 
     def __get_stats(self, fname):
         path = os.path.join(self.__work_dir, fname)
-        stats = Counter()
+        stats = create_counters()
 
         try:
             with open(path, 'r') as fhs:

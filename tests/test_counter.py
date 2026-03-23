@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import time
 import unittest
 
-from DenyHosts.counter import Counter, CounterRecord
+from DenyHosts.counter import create_counters, CounterRecord
 
 class CounterRecordTest(unittest.TestCase):
     def test_init(self):
@@ -104,21 +104,21 @@ class CounterRecordTest(unittest.TestCase):
         c.age_count(0)
         self.assertEqual(c.__repr__(), 'CountRecord <{} - {}>'.format(0, date_str))
 
-class CounterTest(unittest.TestCase):
+class CountersTest(unittest.TestCase):
     def test_init(self):
-        c = Counter()
+        c = create_counters()
         self.assertEqual(len(c), 0)
 
     def test_missing_key(self):
-        c = Counter()
+        c = create_counters()
         key = 'key'
         value = c[key]
-        self.assertEqual(value.get_count(), 0)
+        self.assertEqual(value.count, 0)
         self.assertTrue(key in c)
 
     def test_existing_key(self):
         key = 'key'
-        value = object()
-        c = Counter()
+        value = CounterRecord(5)
+        c = create_counters()
         c[key] = value
         self.assertTrue(c[key] is value)
