@@ -2,6 +2,8 @@ import logging
 import gzip
 import os
 import signal
+import subprocess
+import shlex
 from stat import ST_SIZE, ST_INO
 import time
 try:
@@ -347,11 +349,26 @@ allowed based on your %s file""" % (self.__prefs.get("HOSTS_DENY"),
             try:
                 for host in new_hosts:
                     my_host = str(host)
-                    new_rule = self.__pfctl + " -t " + self.__pftable + " -T add " + my_host
+                    cmd_args = [self.__pfctl, "-t", self.__pftable, "-T", "add", my_host]
+                    new_rule = ' '.join(cmd_args)
                     debug("Running PF update rule: %s", new_rule)
                     info("Creating new PF rule %s", new_rule)
-                    os.system(new_rule)
+                    result = subprocess.run(
+                        cmd_args,
+                        check=True,
+                        capture_output=True,
+                        timeout=30,
+                        text=True
+                    )
+                    debug(f"PF command succeeded: {result.stdout}")
 
+            except subprocess.CalledProcessError as e:
+                print(e)
+                print("Unable to write new PF rule.")
+                debug("Unable to create PF rule. %s", e.stderr)
+            except subprocess.TimeoutExpired:
+                print("PF command timed out.")
+                debug("PF command timed out.")
             except Exception as e:
                 print(e)
                 print("Unable to write new PF rule.")
