@@ -1,6 +1,7 @@
 import logging
 import os
 from socket import getfqdn, gethostbyname
+from typing import Dict, List, Optional, Any
 
 from .constants import ALLOWED_HOSTS, ALLOWED_WARNED_HOSTS
 from .regex import ALLOWED_REGEX
@@ -11,29 +12,29 @@ debug, warn = logger.debug, logger.warning
 
 
 class AllowedHosts(object):
-    def __init__(self, prefs):
+    def __init__(self, prefs: Any) -> None:
         debug("initializing AllowedHosts")
         work_dir = prefs.get("WORK_DIR")
         self.hostname_lookup = is_true(prefs.get("ALLOWED_HOSTS_HOSTNAME_LOOKUP"))
         self.allowed_path = os.path.join(work_dir, ALLOWED_HOSTS)
         self.warned_path = os.path.join(work_dir, ALLOWED_WARNED_HOSTS)
-        self.allowed_hosts = {}
-        self.warned_hosts = {}
-        self.new_warned_hosts = []
+        self.allowed_hosts: Dict[str, int] = {}
+        self.warned_hosts: Dict[str, None] = {}
+        self.new_warned_hosts: List[str] = []
         self.load_hosts()
         self.load_warned_hosts()
         debug("done initializing AllowedHosts")
 
-    def __contains__(self, ip_addr):
+    def __contains__(self, ip_addr: str) -> int:
         if ip_addr in self.allowed_hosts:
             return 1
         return 0
 
-    def dump(self):
+    def dump(self) -> None:
         print("Dumping AllowedHosts")
         print(list(self.allowed_hosts.keys()))
 
-    def load_hosts(self):
+    def load_hosts(self) -> None:
         try:
             fp = open(self.allowed_path, "r")
         except Exception as e:
@@ -42,17 +43,16 @@ class AllowedHosts(object):
 
         for line in fp:
             line = line.strip()
-            if not line or line[0] == '#':
+            if not line or line[0] == "#":
                 continue
 
             m = ALLOWED_REGEX.match(line)
             debug("line: %s - regex match?   %s", line, m is not None)
             if m:
-                # line contains an ip address
-                first3 = m.group('first_3bits')
-                fourth = m.group('fourth')
-                wildcard = m.group('ip_wildcard')
-                ip_range = m.group('ip_range')
+                first3 = m.group("first_3bits")
+                fourth = m.group("fourth")
+                wildcard = m.group("ip_wildcard")
+                ip_range = m.group("ip_range")
 
                 if fourth:
                     self.allowed_hosts["%s%s" % (first3, fourth)] = 1
@@ -67,10 +67,8 @@ class AllowedHosts(object):
                         self.allowed_hosts["%s%d" % (first3, i)] = 1
                         self.add_hostname("%s%s" % (first3, i))
             else:
-                # assume that line contains hostname
                 self.allowed_hosts[line] = 1
                 try:
-                    # lookup ip address of host
                     ip = gethostbyname(line)
                     self.allowed_hosts[ip] = 1
                 except Exception:
@@ -79,7 +77,7 @@ class AllowedHosts(object):
         fp.close()
         debug("allowed_hosts: %s", list(self.allowed_hosts.keys()))
 
-    def add_hostname(self, ip_addr):
+    def add_hostname(self, ip_addr: str) -> None:
         if not self.hostname_lookup:
             return
         else:
@@ -87,18 +85,16 @@ class AllowedHosts(object):
             if hostname != ip_addr:
                 self.allowed_hosts[hostname] = 1
 
-    def add_warned_host(self, host):
-        # debug("warned_hosts: %s", self.warned_hosts.keys())
-
+    def add_warned_host(self, host: str) -> None:
         if host not in self.warned_hosts:
             debug("%s not in warned hosts" % host)
             self.new_warned_hosts.append(host)
             self.warned_hosts[host] = None
 
-    def get_new_warned_hosts(self):
+    def get_new_warned_hosts(self) -> List[str]:
         return self.new_warned_hosts
 
-    def load_warned_hosts(self):
+    def load_warned_hosts(self) -> None:
         try:
             if os.path.isfile(self.warned_path):
                 with open(self.warned_path, "r") as fp:
@@ -107,7 +103,7 @@ class AllowedHosts(object):
         except IOError:
             warn("Couldn't load warned hosts from %s" % self.warned_path)
 
-    def save_warned_hosts(self):
+    def save_warned_hosts(self) -> None:
         if not self.new_warned_hosts:
             return
         try:
@@ -117,5 +113,5 @@ class AllowedHosts(object):
         except Exception as e:
             print(e)
 
-    def clear_warned_hosts(self):
+    def clear_warned_hosts(self) -> None:
         self.new_warned_hosts = []
