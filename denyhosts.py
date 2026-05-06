@@ -3,7 +3,6 @@ import os
 import platform
 import sys
 import logging
-sys.path.insert(0, '/usr/share/denyhosts')
 
 import DenyHosts.python_version
 
@@ -22,7 +21,7 @@ from DenyHosts.constants import *
 from DenyHosts.sync import Sync
 
 logging.basicConfig()
-logger = logging.getLogger('denyhosts')
+logger = logging.getLogger("denyhosts")
 info = logger.info
 debug = logger.debug
 #################################################################################
@@ -30,9 +29,11 @@ debug = logger.debug
 
 def usage():
     print("Usage:")
-    print('{0} [-f logfile | --file=logfile] [ -c configfile | --config configfile] '
-          '[-i | --ignore] [-n | --noemail] [--purge] [--purge-all] [--purgeip ip] '
-          '[--migrate] [--daemon] [--sync] [--version]'.format(sys.argv[0]))
+    print(
+        "{0} [-f logfile | --file=logfile] [ -c configfile | --config configfile] "
+        "[-i | --ignore] [-n | --noemail] [--purge] [--purge-all] [--purgeip ip] "
+        "[--migrate] [--daemon] [--sync] [--version]".format(sys.argv[0])
+    )
     print("\n\n")
     print(" --config: The pathname of the configuration file")
     print(" --file:   The name of log file to parse")
@@ -62,7 +63,7 @@ def usage():
 #################################################################################
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logfiles = []
     purgeip_list = []
     config_file = CONFIG_FILE
@@ -81,63 +82,81 @@ if __name__ == '__main__':
     unlock = 0
     args = sys.argv[1:]
     try:
-        (opts, getopts) = getopt.getopt(args, 'f:c:dinuvps?hV',
-                                        ["file=", "ignore", "verbose", "debug",
-                                         "help", "noemail", "config=", "version",
-                                         "migrate", "purge", "purge-all", "purgeip", "daemon", "foreground",
-                                         "unlock", "sync", "upgrade099"])
+        (opts, getopts) = getopt.getopt(
+            args,
+            "f:c:dinuvps?hV",
+            [
+                "file=",
+                "ignore",
+                "verbose",
+                "debug",
+                "help",
+                "noemail",
+                "config=",
+                "version",
+                "migrate",
+                "purge",
+                "purge-all",
+                "purgeip",
+                "daemon",
+                "foreground",
+                "unlock",
+                "sync",
+                "upgrade099",
+            ],
+        )
     except GetoptError:
         print("\nInvalid command line option detected.")
         usage()
         sys.exit(1)
 
     for opt, arg in opts:
-        if opt in ('-h', '-?', '--help'):
+        if opt in ("-h", "-?", "--help"):
             usage()
             sys.exit(0)
-        if opt in ('-f', '--file'):
+        if opt in ("-f", "--file"):
             logfiles.append(arg)
-        if opt in ('-i', '--ignore'):
+        if opt in ("-i", "--ignore"):
             ignore_offset = 1
-        if opt in ('-n', '--noemail'):
+        if opt in ("-n", "--noemail"):
             noemail = 1
-        if opt in ('-v', '--verbose'):
+        if opt in ("-v", "--verbose"):
             verbose = 1
-        if opt in ('-d', '--debug'):
+        if opt in ("-d", "--debug"):
             enable_debug = 1
-        if opt in ('-c', '--config'):
+        if opt in ("-c", "--config"):
             config_file = arg
-        if opt in ('-m', '--migrate'):
+        if opt in ("-m", "--migrate"):
             migrate = 1
-        if opt in ('-p', '--purge'):
+        if opt in ("-p", "--purge"):
             purge = 1
-        if opt in ('-s', '--sync'):
+        if opt in ("-s", "--sync"):
             sync_mode = 1
-        if opt in ('-s', '--unlock'):
+        if opt in ("-s", "--unlock"):
             unlock = 1
-        if opt == '--daemon':
+        if opt == "--daemon":
             daemon = 1
-        if opt == '--foreground':
+        if opt == "--foreground":
             foreground = 1
-        if opt == '--purge-all':
+        if opt == "--purge-all":
             purge_all = 1
-        if opt == '--purgeip':
+        if opt == "--purgeip":
             purgeip_list = getopts
             purgeip = 1
-        if opt == '--upgrade099':
+        if opt == "--upgrade099":
             upgrade099 = 1
-        if opt == '--version':
+        if opt == "--version":
             print("DenyHosts version:", VERSION)
             sys.exit(0)
 
     # This is generally expected to be in the environment, but there's no
     # non-hackish way to get systemd to set it, so just hack it in here.
-    os.environ['HOSTNAME'] = platform.node()
+    os.environ["HOSTNAME"] = platform.node()
 
     prefs = Prefs(config_file)
-    iptables = prefs.get('IPTABLES')
+    iptables = prefs.get("IPTABLES")
 
-    if prefs.get('SYNC_SERVER'):
+    if prefs.get("SYNC_SERVER"):
         try:
             sync = Sync(prefs)
             sync.send_release_used(VERSION)
@@ -148,8 +167,8 @@ if __name__ == '__main__':
 
     first_time = 0
     try:
-        if not os.path.exists(prefs.get('WORK_DIR')):
-            os.makedirs(prefs.get('WORK_DIR'))
+        if not os.path.exists(prefs.get("WORK_DIR")):
+            os.makedirs(prefs.get("WORK_DIR"))
             first_time = 1
     except Exception as e:
         if e[0] != 17:
@@ -171,8 +190,10 @@ if __name__ == '__main__':
 
     # we will only sync to the server if the sync server is enabled and the sync_version is either true or commented out
     # config file has it set to sync the version by default if the sync server is enabled
-    if prefs.get('SYNC_SERVER') and (prefs.get('SYNC_VERSION') is None or is_true(prefs.get('SYNC_VERSION'))):
-        debug('Attempting to Sync Version: %s' % VERSION)
+    if prefs.get("SYNC_SERVER") and (
+        prefs.get("SYNC_VERSION") is None or is_true(prefs.get("SYNC_VERSION"))
+    ):
+        debug("Attempting to Sync Version: %s" % VERSION)
         try:
             sync = Sync(prefs)
             sync.send_release_used(VERSION)
@@ -182,35 +203,37 @@ if __name__ == '__main__':
             pass
 
     if not logfiles or daemon:
-        logfiles = [prefs.get('SECURE_LOG')]
+        logfiles = [prefs.get("SECURE_LOG")]
     elif len(logfiles) > 1:
         ignore_offset = 1
 
-    if not prefs.get('ADMIN_EMAIL'):
+    if not prefs.get("ADMIN_EMAIL"):
         noemail = 1
 
-    lock_file = LockFile(prefs.get('LOCK_FILE'))
+    lock_file = LockFile(prefs.get("LOCK_FILE"))
 
     if unlock:
-        if os.path.isfile(prefs.get('LOCK_FILE')):
+        if os.path.isfile(prefs.get("LOCK_FILE")):
             lock_file.remove()
 
     lock_file.create()
 
     if upgrade099 and not (daemon or foreground):
-        if not prefs.get('PURGE_DENY'):
+        if not prefs.get("PURGE_DENY"):
             lock_file.remove()
             die(
-                "You have supplied the --upgrade099 flag," +
-                " however you have not set PURGE_DENY in your configuration file"
+                "You have supplied the --upgrade099 flag,"
+                + " however you have not set PURGE_DENY in your configuration file"
             )
         else:
             u = UpgradeTo099(prefs.get("HOSTS_DENY"))
 
     if migrate and not (daemon or foreground):
-        if not prefs.get('PURGE_DENY'):
+        if not prefs.get("PURGE_DENY"):
             lock_file.remove()
-            die("You have supplied the --migrate flag however you have not set PURGE_DENY in your configuration file.")
+            die(
+                "You have supplied the --migrate flag however you have not set PURGE_DENY in your configuration file."
+            )
         else:
             m = Migrate(prefs.get("HOSTS_DENY"))
 
@@ -220,7 +243,9 @@ if __name__ == '__main__':
         if purgeip and not daemon:
             if len(purgeip_list) < 1:
                 lock_file.remove()
-                die("You have provided the --purgeip flag however you have not listed any IP addresses to purge.")
+                die(
+                    "You have provided the --purgeip flag however you have not listed any IP addresses to purge."
+                )
             else:
                 try:
                     ip_purger = PurgeIP(prefs, purgeip_list)
@@ -240,10 +265,12 @@ if __name__ == '__main__':
                 die(str(e))
 
         if purge and not (daemon or foreground):
-            purge_time = prefs.get('PURGE_DENY')
+            purge_time = prefs.get("PURGE_DENY")
             if not purge_time:
                 lock_file.remove()
-                die("You have provided the --purge flag however you have not set PURGE_DENY in your configuration file.")
+                die(
+                    "You have provided the --purge flag however you have not set PURGE_DENY in your configuration file."
+                )
             else:
                 try:
                     purger = Purge(prefs, purge_time)
@@ -258,8 +285,16 @@ if __name__ == '__main__':
 
     try:
         for f in logfiles:
-            dh = DenyHosts(f, prefs, lock_file, ignore_offset,
-                           first_time, noemail, daemon, foreground)
+            dh = DenyHosts(
+                f,
+                prefs,
+                lock_file,
+                ignore_offset,
+                first_time,
+                noemail,
+                daemon,
+                foreground,
+            )
     except KeyboardInterrupt:
         pass
     except SystemExit as e:
@@ -269,9 +304,11 @@ if __name__ == '__main__':
         print("\nDenyHosts exited abnormally")
 
     if sync_mode and not (daemon or foreground):
-        if not prefs.get('SYNC_SERVER'):
+        if not prefs.get("SYNC_SERVER"):
             lock_file.remove()
-            die("You have provided the --sync flag however your configuration file is missing a value for SYNC_SERVER.")
+            die(
+                "You have provided the --sync flag however your configuration file is missing a value for SYNC_SERVER."
+            )
         sync_upload = is_true(prefs.get("SYNC_UPLOAD"))
         sync_download = is_true(prefs.get("SYNC_DOWNLOAD"))
         if not sync_upload and not sync_download:
