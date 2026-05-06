@@ -27,21 +27,13 @@ class CounterRecord:
             return NotImplemented
         return self.count == other.count and self.date == other.date
 
-    def __add__(self, increment):
-        # 警告：这个方法有副作用，仅为向后兼容保留
-        # 建议使用 increment() 方法
-        import warnings
-        warnings.warn("__add__ has side effects, use increment() instead", DeprecationWarning, stacklevel=2)
-        self.count += increment
-        self.date = time.asctime()
-        return self
+    def __add__(self, increment: int) -> "CounterRecord":
+        """返回一个新的 CounterRecord 对象，不修改原始对象"""
+        return CounterRecord(count=self.count + increment, date=time.asctime())
 
-    def increment(self, amount: int = 1) -> 'CounterRecord':
+    def increment(self, amount: int = 1) -> "CounterRecord":
         """返回新对象，不产生副作用"""
-        return CounterRecord(
-            count=self.count + amount,
-            date=time.asctime()
-        )
+        return CounterRecord(count=self.count + amount, date=time.asctime())
 
     def reset_count(self) -> None:
         """重置计数为0"""
@@ -50,7 +42,7 @@ class CounterRecord:
     def age_count(self, age: int) -> bool:
         """检查是否已过期，如果过期则重置计数"""
         cutoff = int(time.time()) - age
-        epoch = time.mktime(time.strptime(self.date, '%a %b %d %H:%M:%S %Y'))
+        epoch = time.mktime(time.strptime(self.date, "%a %b %d %H:%M:%S %Y"))
         if cutoff > epoch:
             self.count = 0
             return True
@@ -62,6 +54,8 @@ class CounterRecord:
 
     def get_date(self):
         return self.date
+
+
 # 使用 defaultdict 创建计数器
 def create_counters():
     """创建计数器字典，默认值为 CounterRecord()"""
