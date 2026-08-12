@@ -48,7 +48,7 @@ class LoginAttempt(object):
             suspicious_always: 是否总是报告可疑登录
             first_time: 是否为首次运行
             fetch_all: 是否加载所有现有统计数据
-            restricted: 受限用户名集合
+            restricted: 受限用户名的集合
         """
         if restricted is None:
             restricted = set()
